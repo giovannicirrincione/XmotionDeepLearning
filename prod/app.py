@@ -40,7 +40,7 @@ with open(os.path.join(PROD_DIR, "translation.pkl"), "rb") as f:
 @st.cache_resource
 def cargar_modelo():
     model = BertEmotionClassifier(num_labels=20).to(device)
-    model.load_state_dict(torch.load(os.path.join(PROD_DIR, "modelo_lr_2e-05.pth"), map_location=device))
+    model.load_state_dict(torch.load(os.path.join(PROD_DIR, "modelo_lr_5e-05.pth"), map_location=device))
     model.eval()
     return model
 
