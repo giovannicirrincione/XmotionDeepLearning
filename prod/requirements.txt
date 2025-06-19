@@ -1,0 +1,9 @@
+streamlit
+torch
+transformers
+matplotlib
+pandas
+numpy
+scikit-learn
+emoji
+requests
