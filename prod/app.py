@@ -190,7 +190,7 @@ if st.session_state.tweets:
             top5_dict = dict(top5_emociones)
 
             # Agrega solo si está en el top5 Y su valor es mayor a 0.0
-            if emocion_seleccionada in top5_dict and top5_dict[emocion_seleccionada] > 0.0:
+            if emocion_seleccionada in top5_dict and top5_dict[emocion_seleccionada] > 0.5:
                 tweets_filtrados.append((tweet, emociones_tweet))
 
         if tweets_filtrados:
