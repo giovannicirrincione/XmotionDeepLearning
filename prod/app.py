@@ -146,7 +146,7 @@ if st.button("📊 Analizar tweets") and usuario:
 if st.session_state.tweets:
     with st.spinner('Analizando emociones...'):
         emociones = analizar_emociones_tweets(st.session_state.tweets)
-        st.subheader("🎯 Top 5 emociones predominantes")
+        st.subheader(" Top 5 emociones predominantes")
 
         df_emociones = pd.DataFrame(list(emociones.items()), columns=["Emoción", "Porcentaje"])
         df_top5 = df_emociones.head(5)
@@ -161,15 +161,15 @@ if st.session_state.tweets:
         plt.tight_layout()
         st.pyplot(fig)
 
-        st.subheader("📊 Distribución porcentual (Top 5)")
+        st.subheader(" Distribución porcentual (Top 5)")
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.pie(df_top5["Porcentaje"], labels=df_top5["Emoción"], autopct='%1.1f%%', startangle=90)
         ax.axis("equal")
         st.pyplot(fig)
 
-        st.subheader("📝 Tweets analizados")
+        st.subheader(" Tweets analizados")
         for tweet in st.session_state.tweets:
-            with st.expander(f"📌 {clean_text(tweet)}"):
+            with st.expander(f" {clean_text(tweet)}"):
                 emociones_tweet = predecir_emociones_individuales(tweet)
                 df_emocion_tweet = pd.DataFrame(list(emociones_tweet.items()), columns=["Emoción", "Probabilidad (%)"])
                 df_emocion_tweet = df_emocion_tweet.sort_values(by="Probabilidad (%)", ascending=False).head(5)
@@ -193,14 +193,14 @@ if st.session_state.tweets:
             top5_emociones = sorted(emociones_tweet.items(), key=lambda x: -x[1])[:5]
             top5_dict = dict(top5_emociones)
 
-            # Agrega solo si está en el top5 Y su valor es mayor a 0.0
+            # Agrega solo si está en el top5 Y su valor es mayor a 0.5
             if emocion_seleccionada in top5_dict and top5_dict[emocion_seleccionada] > 0.5:
                 tweets_filtrados.append((tweet, emociones_tweet))
 
         if tweets_filtrados:
             st.markdown(f"Se encontraron **{len(tweets_filtrados)}** tweets donde la emoción **'{emocion_seleccionada}'** está entre las 5 más probables.")
             for tweet, emociones_tweet in tweets_filtrados:
-                with st.expander(f"📌 {clean_text(tweet)}"):
+                with st.expander(f" {clean_text(tweet)}"):
                     df_emocion_tweet = pd.DataFrame(list(emociones_tweet.items()), columns=["Emoción", "Probabilidad (%)"])
                     df_emocion_tweet = df_emocion_tweet.sort_values(by="Probabilidad (%)", ascending=False).head(5)
 
