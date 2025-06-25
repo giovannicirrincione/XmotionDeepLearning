@@ -48,57 +48,43 @@ model = cargar_modelo()
 
 # Función para limpiar texto
 def clean_text(text):
-    # Pasar a minúsculas
     text = text.lower()
-
-    # Eliminar links
     text = re.sub(r"http\S+|www\S+|pic\.twitter\.com\S+", "", text)
-
-    # Eliminar menciones y hashtags
     text = re.sub(r"@\w+", "", text)
     text = re.sub(r"#\w+", "", text)
-
-    # Eliminar emojis
     text = emoji.replace_emoji(text, replace="")
-
-    # Eliminar caracteres especiales, excepto letras y espacios
     text = re.sub(r"[^\w\s]", "", text)
-
-    # Eliminar múltiples espacios
     text = re.sub(r"\s+", " ", text)
-
     return text.strip()
 
 # Función para predecir emociones de múltiples textos
 def analizar_emociones_tweets(lista_tweets):
     if not lista_tweets:
         return {}
-        
-    # Inicializamos un acumulador para las emociones
-    suma_emociones = {}
-    for emocion in encoder.classes_:
-        suma_emociones[emocion] = 0.0
-
+    suma_emociones = {emocion: 0.0 for emocion in encoder.classes_}
     for oracion in lista_tweets:
         texto_limpio = clean_text(oracion)
         tokens = tokenizer(texto_limpio, return_tensors="pt", padding=True, truncation=True, max_length=128)
         tokens = {k: v.to(device) for k, v in tokens.items()}
-
         with torch.no_grad():
             probs = model(**tokens)[0]
-
         for i in range(len(probs)):
             emocion = encoder.classes_[i]
             suma_emociones[emocion] += float(probs[i] * 100)
-
-    # Promediamos dividiendo por la cantidad de tweets
     cantidad = len(lista_tweets)
     promedio_emociones = {emocion: valor / cantidad for emocion, valor in suma_emociones.items()}
-
-    # Ordenamos de mayor a menor
     return dict(sorted(promedio_emociones.items(), key=lambda x: -x[1]))
 
-# Datos de prueba para cuando la API está limitada
+# Predecir emociones de un solo tweet
+def predecir_emociones_individuales(texto):
+    texto_limpio = clean_text(texto)
+    tokens = tokenizer(texto_limpio, return_tensors="pt", padding=True, truncation=True, max_length=128)
+    tokens = {k: v.to(device) for k, v in tokens.items()}
+    with torch.no_grad():
+        probs = model(**tokens)[0][0]
+    return {emocion: float(probs[i] * 100) for i, emocion in enumerate(encoder.classes_)}
+
+# Datos de prueba
 TWEETS_PRUEBA = [
     "¡Qué día tan maravilloso! Me siento muy feliz y agradecido por todo lo que tengo.",
     "Estoy realmente emocionado por el nuevo proyecto que estamos comenzando.",
@@ -124,71 +110,62 @@ if st.button("Analizar tweets") and usuario:
     with st.spinner('Obteniendo tweets...'):
         tweets = []
         usando_datos_prueba = False
-        
         try:
             tweets = obtener_tweets(usuario)
-            if not tweets:  # Si no se obtuvieron tweets
+            if not tweets:
                 raise Exception("No se pudieron obtener tweets")
         except Exception as e:
             error_msg = str(e)
             if "429" in error_msg or "UsageCapExceeded" in error_msg or "Too Many Requests" in error_msg:
-                st.warning("""
-                ⚠️ La API de Twitter está temporalmente limitada. 
-                Se utilizarán datos de prueba para demostrar la funcionalidad.
-                """)
+                st.warning("⚠️ La API de Twitter está temporalmente limitada. Se utilizarán datos de prueba.")
                 tweets = TWEETS_PRUEBA
                 usando_datos_prueba = True
             else:
-                st.error(f"""
-                Error al obtener tweets: {error_msg}
-                
-                Por favor, intente nuevamente más tarde o con otro usuario.
-                """)
-        
-        if tweets:
-            st.success(f"Se obtuvieron {len(tweets)} tweets")
-            
-            with st.spinner('Analizando emociones...'):
-                emociones = analizar_emociones_tweets(tweets)
+                st.error(f"Error al obtener tweets: {error_msg}")
+    
+    if tweets:
+        st.success(f"Se obtuvieron {len(tweets)} tweets")
+        with st.spinner('Analizando emociones...'):
+            emociones = analizar_emociones_tweets(tweets)
+            st.subheader("Resultados del análisis")
 
-                # Mostrar resultados
-                st.subheader("Resultados del análisis")
-                
-                # Obtener los 5 estados emocionales con mayor porcentaje
-                df_emociones = pd.DataFrame(list(emociones.items()), columns=["Emoción", "Porcentaje"])
-                df_top5 = df_emociones.head(5)
-                
-                # Gráfico de barras horizontal
-                st.subheader("Top 5 emociones predominantes")
-                fig, ax = plt.subplots(figsize=(10, 4))
-                bars = ax.barh(df_top5["Emoción"], df_top5["Porcentaje"], height=0.5)
-                ax.set_xlabel("Porcentaje (%)")
-                ax.set_xlim(0, 100)
-                
-                # Agregar los valores de porcentaje al final de cada barra
-                for bar in bars:
-                    width = bar.get_width()
-                    ax.text(width + 1, bar.get_y() + bar.get_height()/2, 
-                           f'{width:.1f}%', ha='left', va='center')
-                
-                plt.tight_layout()
-                st.pyplot(fig)
+            df_emociones = pd.DataFrame(list(emociones.items()), columns=["Emoción", "Porcentaje"])
+            df_top5 = df_emociones.head(5)
 
-                # Gráfico de torta
-                st.subheader("Distribución porcentual (Top 5)")
-                fig, ax = plt.subplots(figsize=(10, 6))
-                ax.pie(df_top5["Porcentaje"], labels=df_top5["Emoción"], 
-                      autopct='%1.1f%%', startangle=90)
-                ax.axis("equal")
-                st.pyplot(fig)
+            st.subheader("Top 5 emociones predominantes")
+            fig, ax = plt.subplots(figsize=(10, 4))
+            bars = ax.barh(df_top5["Emoción"], df_top5["Porcentaje"], height=0.5)
+            ax.set_xlabel("Porcentaje (%)")
+            ax.set_xlim(0, 100)
+            for bar in bars:
+                width = bar.get_width()
+                ax.text(width + 1, bar.get_y() + bar.get_height()/2, f'{width:.1f}%', ha='left', va='center')
+            plt.tight_layout()
+            st.pyplot(fig)
 
-                # Mostrar tweets analizados
-                st.subheader("Tweets analizados")
-                for tweet in tweets:
-                    st.write(f"- {clean_text(tweet)}")
-                    
-                if usando_datos_prueba:
-                    st.info("""
-                    ℹ️ Nota: Estos son datos de prueba utilizados debido a limitaciones de la API de Twitter.
-                    Los resultados mostrados son solo para fines de demostración.
-                    """)
+            st.subheader("Distribución porcentual (Top 5)")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.pie(df_top5["Porcentaje"], labels=df_top5["Emoción"], autopct='%1.1f%%', startangle=90)
+            ax.axis("equal")
+            st.pyplot(fig)
+
+            # Mostrar tweets analizados y gráficos individuales
+            st.subheader("Tweets analizados")
+            for i, tweet in enumerate(tweets):
+                with st.expander(f"📌 {clean_text(tweet)}"):
+                    emociones_tweet = predecir_emociones_individuales(tweet)
+                    df_emocion_tweet = pd.DataFrame(list(emociones_tweet.items()), columns=["Emoción", "Probabilidad (%)"])
+                    df_emocion_tweet = df_emocion_tweet.sort_values(by="Probabilidad (%)", ascending=False).head(5)
+
+                    fig_tweet, ax_tweet = plt.subplots(figsize=(8, 3))
+                    bars = ax_tweet.barh(df_emocion_tweet["Emoción"], df_emocion_tweet["Probabilidad (%)"], color='skyblue')
+                    ax_tweet.set_xlim(0, 100)
+                    for bar in bars:
+                        width = bar.get_width()
+                        ax_tweet.text(width + 1, bar.get_y() + bar.get_height()/2, f'{width:.1f}%', ha='left', va='center')
+                    ax_tweet.set_xlabel("Probabilidad (%)")
+                    plt.tight_layout()
+                    st.pyplot(fig_tweet)
+
+            if usando_datos_prueba:
+                st.info("ℹ️ Nota: Estos son datos de prueba utilizados debido a limitaciones de la API de Twitter.")
