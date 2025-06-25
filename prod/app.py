@@ -18,7 +18,11 @@ import emoji
 warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
 
 # Configuración de la página
-st.set_page_config(page_title="Análisis de Emociones en Tweets", layout="wide")
+st.set_page_config(
+    page_title="Análisis de Emociones en Tweets",
+    page_icon="icono.png",  # <- Ruta a tu imagen
+    layout="wide"
+)
 
 PROD_DIR = os.path.dirname(os.path.abspath(__file__))
 
