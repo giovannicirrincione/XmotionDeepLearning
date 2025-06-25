@@ -166,6 +166,38 @@ if st.button("Analizar tweets") and usuario:
                     ax_tweet.set_xlabel("Probabilidad (%)")
                     plt.tight_layout()
                     st.pyplot(fig_tweet)
+            # Filtro por emoción
+            st.subheader("🔍 Filtrar tweets por emoción dominante")
+            emocion_seleccionada = st.selectbox("Seleccioná una emoción", encoder.classes_)
+            
+            tweets_filtrados = []
+            
+            for tweet in tweets:
+                emociones_tweet = predecir_emociones_individuales(tweet)
+                top5_emociones = sorted(emociones_tweet.items(), key=lambda x: -x[1])[:5]
+                top5_nombres = [e[0] for e in top5_emociones]
+                
+                if emocion_seleccionada in top5_nombres:
+                    tweets_filtrados.append((tweet, emociones_tweet))
+            
+            if tweets_filtrados:
+                st.markdown(f"Se encontraron **{len(tweets_filtrados)}** tweets donde la emoción **'{emocion_seleccionada}'** está entre las 5 más probables.")
+                for tweet, emociones_tweet in tweets_filtrados:
+                    with st.expander(f"📌 {clean_text(tweet)}"):
+                        df_emocion_tweet = pd.DataFrame(list(emociones_tweet.items()), columns=["Emoción", "Probabilidad (%)"])
+                        df_emocion_tweet = df_emocion_tweet.sort_values(by="Probabilidad (%)", ascending=False).head(5)
+            
+                        fig, ax = plt.subplots(figsize=(8, 3))
+                        bars = ax.barh(df_emocion_tweet["Emoción"], df_emocion_tweet["Probabilidad (%)"], color='lightgreen')
+                        ax.set_xlim(0, 100)
+                        for bar in bars:
+                            width = bar.get_width()
+                            ax.text(width + 1, bar.get_y() + bar.get_height()/2, f'{width:.1f}%', ha='left', va='center')
+                        ax.set_xlabel("Probabilidad (%)")
+                        plt.tight_layout()
+                        st.pyplot(fig)
+            else:
+                st.warning(f"No se encontraron tweets donde la emoción '{emocion_seleccionada}' esté entre las 5 más probables.")
 
             if usando_datos_prueba:
                 st.info("ℹ️ Nota: Estos son datos de prueba utilizados debido a limitaciones de la API de Twitter.")
