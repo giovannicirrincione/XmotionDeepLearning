@@ -7,8 +7,7 @@ import numpy as np
 from collections import Counter
 from sklearn.preprocessing import LabelEncoder
 import utils_dev as utils_dev
-from utils_dev import obtener_tweets
-from utils_dev import BertEmotionClassifier
+from utils_dev import obtener_tweets, BertEmotionClassifier
 import pickle
 import os
 import warnings
@@ -21,7 +20,6 @@ warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
 # Configuración de la página
 st.set_page_config(page_title="Análisis de Emociones en Tweets", layout="wide")
 
-# Configurar rutas de archivos
 PROD_DIR = os.path.dirname(os.path.abspath(__file__))
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -101,50 +99,54 @@ TWEETS_PRUEBA = [
     "Me siento confundido con todas estas nuevas reglas."
 ]
 
-# Inicializar estado
+# Estado inicial
 if "tweets" not in st.session_state:
     st.session_state.tweets = []
     st.session_state.usando_datos_prueba = False
 
-# Interfaz
 st.title("Análisis de emociones en tweets")
+
 st.markdown("""
-Esta aplicación analiza los tweets de un usuario de Twitter y determina las emociones predominantes en sus publicaciones.
+Esta aplicación analiza los tweets de un usuario de Twitter (X) y determina las emociones predominantes.
+
+### 🛠️ ¿Cómo obtener tu Bearer Token?
+
+1. Ingresá a [X Developer Platform](https://docs.x.com/x-api/introduction)
+2. Registrate y creá un proyecto con acceso a la API v2.
+3. Navegá a la sección de autenticación y copiá tu **Bearer Token**.
 """)
 
-usuario = st.text_input("Ingresá el nombre de usuario de Twitter (sin el @)")
+bearer_token = st.text_input("🔑 Pegá tu Bearer Token de X (requerido para acceder a tweets)", type="password")
+usuario = st.text_input("👤 Ingresá el nombre de usuario de Twitter (sin @)")
 
-if st.button("Analizar tweets") and usuario:
+if st.button("📊 Analizar tweets") and usuario:
     with st.spinner('Obteniendo tweets...'):
         tweets = []
         usando_datos_prueba = False
         try:
-            tweets = obtener_tweets(usuario)
+            tweets = obtener_tweets(usuario, bearer_token)
             if not tweets:
                 raise Exception("No se pudieron obtener tweets")
         except Exception as e:
             error_msg = str(e)
-            if "429" in error_msg or "UsageCapExceeded" in error_msg or "Too Many Requests" in error_msg:
-                st.warning("⚠️ La API de Twitter está temporalmente limitada. Se utilizarán datos de prueba.")
-                tweets = TWEETS_PRUEBA
-                usando_datos_prueba = True
-            else:
-                st.error(f"Error al obtener tweets: {error_msg}")
+            st.warning(f"⚠️ Error: {error_msg}")
+            st.info("Se utilizarán datos de prueba.")
+            tweets = TWEETS_PRUEBA
+            usando_datos_prueba = True
 
-    if tweets:
-        st.session_state.tweets = tweets
-        st.session_state.usando_datos_prueba = usando_datos_prueba
+        if tweets:
+            st.session_state.tweets = tweets
+            st.session_state.usando_datos_prueba = usando_datos_prueba
 
-# Mostrar resultados si ya hay tweets guardados
+# Resultados
 if st.session_state.tweets:
     with st.spinner('Analizando emociones...'):
         emociones = analizar_emociones_tweets(st.session_state.tweets)
-        st.subheader("Resultados del análisis")
+        st.subheader("🎯 Top 5 emociones predominantes")
 
         df_emociones = pd.DataFrame(list(emociones.items()), columns=["Emoción", "Porcentaje"])
         df_top5 = df_emociones.head(5)
 
-        st.subheader("Top 5 emociones predominantes")
         fig, ax = plt.subplots(figsize=(10, 4))
         bars = ax.barh(df_top5["Emoción"], df_top5["Porcentaje"], height=0.5)
         ax.set_xlabel("Porcentaje (%)")
@@ -155,14 +157,14 @@ if st.session_state.tweets:
         plt.tight_layout()
         st.pyplot(fig)
 
-        st.subheader("Distribución porcentual (Top 5)")
+        st.subheader("📊 Distribución porcentual (Top 5)")
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.pie(df_top5["Porcentaje"], labels=df_top5["Emoción"], autopct='%1.1f%%', startangle=90)
         ax.axis("equal")
         st.pyplot(fig)
 
-        st.subheader("Tweets analizados")
-        for i, tweet in enumerate(st.session_state.tweets):
+        st.subheader("📝 Tweets analizados")
+        for tweet in st.session_state.tweets:
             with st.expander(f"📌 {clean_text(tweet)}"):
                 emociones_tweet = predecir_emociones_individuales(tweet)
                 df_emocion_tweet = pd.DataFrame(list(emociones_tweet.items()), columns=["Emoción", "Probabilidad (%)"])
@@ -209,4 +211,4 @@ if st.session_state.tweets:
             st.warning(f"No se encontraron tweets donde la emoción '{emocion_seleccionada}' esté entre las 5 más probables.")
 
         if st.session_state.usando_datos_prueba:
-            st.info("ℹ️ Nota: Estos son datos de prueba utilizados debido a limitaciones de la API de Twitter.")
+            st.info("ℹ️ Nota: Estos son datos de prueba utilizados debido a errores con la API.")
