@@ -1,14 +1,9 @@
 import requests
-import torch 
+import torch
 import torch.nn as nn
-from transformers import  DistilBertModel
-import time
-import urllib.parse as up
+from transformers import DistilBertModel
 
 def obtener_tweets_prueba(username, max_results=30):
-    """
-    Función de prueba que devuelve tweets simulados para desarrollo
-    """
     tweets_prueba = [
         "¡Qué día tan maravilloso! Me siento muy feliz y agradecido por todo lo que tengo.",
         "Estoy un poco preocupado por el examen de mañana, pero confío en que todo saldrá bien.",
@@ -23,24 +18,23 @@ def obtener_tweets_prueba(username, max_results=30):
     ]
     return tweets_prueba[:max_results]
 
-def obtener_tweets(username, max_results=30):
-    BEARER_TOKEN = up.unquote("AAAAAAAAAAAAAAAAAAAAAKJX2gEAAAAAUvgrT3Bepn7v7%2FJc8CETm4WgZdg%3DWJS8vqbNJvicK8ZRcUfsXHxgNydeVdg552yFR3x49tAnHHBJYk")
+def obtener_tweets(username, bearer_token, max_results=30):
+    if not bearer_token:
+        raise Exception("Debe ingresar un Bearer Token válido para consultar la API de X.")
 
     headers = {
-        "Authorization": f"Bearer {BEARER_TOKEN}"
+        "Authorization": f"Bearer {bearer_token}"
     }
 
-    # Obtener el ID del usuario por nombre de usuario
+    # Obtener el ID del usuario por nombre
     url = f"https://api.twitter.com/2/users/by/username/{username}"
     resp = requests.get(url, headers=headers)
-
     if resp.status_code != 200:
-        print(f"Error al obtener ID: {resp.status_code} - {resp.text}")
-        return obtener_tweets_prueba(username)
+        raise Exception(f"Error al obtener ID del usuario: {resp.status_code} - {resp.text}")
 
     user_id = resp.json()["data"]["id"]
 
-    # Obtener los tweets del usuario
+    # Obtener los tweets
     url = f"https://api.twitter.com/2/users/{user_id}/tweets"
     params = {
         "max_results": max_results,
@@ -48,10 +42,8 @@ def obtener_tweets(username, max_results=30):
     }
 
     resp = requests.get(url, headers=headers, params=params)
-
     if resp.status_code != 200:
-        print(f"Error al obtener tweets: {resp.status_code} - {resp.text}")
-        return obtener_tweets_prueba(username)
+        raise Exception(f"Error al obtener tweets: {resp.status_code} - {resp.text}")
 
     tweets = resp.json().get("data", [])
     return [tweet["text"] for tweet in tweets]
@@ -63,6 +55,7 @@ class BertEmotionClassifier(nn.Module):
         self.dropout = nn.Dropout(0.3) 
         self.classifier = nn.Linear(self.bert.config.hidden_size, num_labels) 
         self.softmax = nn.Softmax(dim=1) 
+
     def forward(self, input_ids, attention_mask): 
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask) 
         cls_output = outputs.last_hidden_state[:, 0, :] 
