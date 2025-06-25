@@ -24,7 +24,7 @@ def obtener_tweets_prueba(username, max_results=30):
     return tweets_prueba[:max_results]
 
 def obtener_tweets(username, max_results=30):
-    BEARER_TOKEN = up.unquote("AAAAAAAAAAAAAAAAAAAAAKdX2gEAAAAAk8Db1R2xUV8wq3o5fLM6gUfeweA%3DkKjBWIozILGJ72tgU129mgmPwvwm0iSQLadRBHhrc2fO9alWZq")
+    BEARER_TOKEN = up.unquote("AAAAAAAAAAAAAAAAAAAAAKJX2gEAAAAAUvgrT3Bepn7v7%2FJc8CETm4WgZdg%3DWJS8vqbNJvicK8ZRcUfsXHxgNydeVdg552yFR3x49tAnHHBJYk")
 
     headers = {
         "Authorization": f"Bearer {BEARER_TOKEN}"
