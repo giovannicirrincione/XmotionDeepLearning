@@ -82,7 +82,14 @@ def predecir_emociones_individuales(texto):
     tokens = {k: v.to(device) for k, v in tokens.items()}
     with torch.no_grad():
         probs = model(**tokens)[0][0]
-    return {emocion: float(probs[i].item() * 100) for i, emocion in enumerate(encoder.classes_)}
+    # Asegurarse que probs y clases tienen misma longitud
+    if len(probs) != len(encoder.classes_):
+        raise ValueError(f"Cantidad de probabilidades ({len(probs)}) no coincide con clases ({len(encoder.classes_)})")
+    
+    return {
+        emocion: float(prob.item() * 100)
+        for emocion, prob in zip(encoder.classes_, probs)
+    }
 
 # Datos de prueba
 TWEETS_PRUEBA = [
