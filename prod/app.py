@@ -80,14 +80,16 @@ def predecir_emociones_individuales(texto):
     texto_limpio = clean_text(texto)
     tokens = tokenizer(texto_limpio, return_tensors="pt", padding=True, truncation=True, max_length=128)
     tokens = {k: v.to(device) for k, v in tokens.items()}
-    with torch.no_grad():
-        probs = model(**tokens)[0][0]
-    # Asegurarse que probs y clases tienen misma longitud
-    if len(probs) != len(encoder.classes_):
-        raise ValueError(f"Cantidad de probabilidades ({len(probs)}) no coincide con clases ({len(encoder.classes_)})")
     
+    with torch.no_grad():
+        probs_tensor = model(**tokens)  # Devuelve [batch_size, num_labels]
+    
+    # Extraer el primer (y único) elemento del batch
+    probs = probs_tensor[0][0]  # tensor de tamaño [num_labels]
+
+    # Convertir a lista de floats
     return {
-        emocion: float(prob.item() * 100)
+        emocion: prob.item() * 100
         for emocion, prob in zip(encoder.classes_, probs)
     }
 
