@@ -82,12 +82,9 @@ def predecir_emociones_individuales(texto):
     tokens = {k: v.to(device) for k, v in tokens.items()}
     
     with torch.no_grad():
-        probs_tensor = model(**tokens)  # Devuelve [batch_size, num_labels]
+        output = model(**tokens)
+        probs = output[0].squeeze(0)  # ← esto es lo que cambia
     
-    # Extraer el primer (y único) elemento del batch
-    probs = probs_tensor[0][0]  # tensor de tamaño [num_labels]
-
-    # Convertir a lista de floats
     return {
         emocion: prob.item() * 100
         for emocion, prob in zip(encoder.classes_, probs)
