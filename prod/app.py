@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
 # Configuración de la página
 st.set_page_config(
     page_title="Análisis de Emociones en Tweets",
-    page_icon="Flux_Dev_A_stylized_logo_for_an_AIpowered_app_that_utilizes_da_1.jpg", 
+    page_icon="logoXmotion.png", 
     layout="wide"
 )
 
