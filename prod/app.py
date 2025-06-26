@@ -123,7 +123,7 @@ Esta aplicación analiza los tweets de un usuario de Twitter (X) y determina las
 6. Hacé clic en “Regenerate” o “View” para copiar el Bearer Token
 
 SI NO TE SALE PREGUNTALE A UNA IA
-
+""")
 bearer_token = st.text_input("🔑 Pegá tu Bearer Token de X (requerido para acceder a tweets)", type="password")
 usuario = st.text_input("👤 Ingresá el nombre de usuario de Twitter (sin @)")
 
