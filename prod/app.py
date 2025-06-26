@@ -116,9 +116,13 @@ Esta aplicación analiza los tweets de un usuario de Twitter (X) y determina las
 ### 🛠️ ¿Cómo obtener tu Bearer Token?
 
 1. Ingresá a [X Developer Platform](https://docs.x.com/x-api/introduction)
-2. Registrate y creá un proyecto con acceso a la API v2.
-3. Navegá a la sección de autenticación y copiá tu **Bearer Token**.
-""")
+2. Navega hacia developer Portal
+3. Creá un proyecto y una app
+4. Elegi nivel de acceso basico
+5. Dentro de tu app, andá a la sección “Keys and Tokens”
+6. Hacé clic en “Regenerate” o “View” para copiar el Bearer Token
+
+SI NO TE SALE PREGUNTALE A UNA IA
 
 bearer_token = st.text_input("🔑 Pegá tu Bearer Token de X (requerido para acceder a tweets)", type="password")
 usuario = st.text_input("👤 Ingresá el nombre de usuario de Twitter (sin @)")
